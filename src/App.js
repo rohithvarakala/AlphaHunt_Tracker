@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, Activity, PlusCircle, X, Search, RefreshCw, Share2, Download, Filter, Calendar, ChevronDown } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { TrendingUp, TrendingDown, Activity, PlusCircle, X, Search, RefreshCw, Download } from 'lucide-react';
 
 const AlphaHunt = () => {
   const [trades, setTrades] = useState([]);
@@ -8,7 +8,7 @@ const AlphaHunt = () => {
   const [stockPrices, setStockPrices] = useState({});
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [newTrade, setNewTrade] = useState({
-    ticker: '', type: 'BUY', shares: '', entryPrice: '', exitPrice: '', 
+    ticker: '', type: 'BUY', shares: '', entryPrice: '', exitPrice: '',
     entryDate: '', exitDate: '', status: 'OPEN', sector: 'Technology'
   });
   const [filter, setFilter] = useState('ALL');
@@ -18,47 +18,50 @@ const AlphaHunt = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [isFetchingPrice, setIsFetchingPrice] = useState(false);
 
+  // Use environment variable for API key
+  const API_KEY = process.env.REACT_APP_ALPHA_VANTAGE_API_KEY || 'demo';
+
   const fetchStockPrices = useCallback(async (tradesToFetch) => {
     setIsLoadingPrices(true);
     const openTickers = [...new Set(tradesToFetch.filter(t => t.status === 'OPEN').map(t => t.ticker))];
-    
+
     if (openTickers.length === 0) {
       setIsLoadingPrices(false);
       return;
     }
 
     const prices = {};
-    const API_KEY = 'WDYQC1WE37RIXN9A';
-    
+
     for (const ticker of openTickers) {
       try {
         const response = await fetch(
           `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${ticker}&apikey=${API_KEY}`
         );
         const data = await response.json();
-        
+
         if (data['Global Quote'] && data['Global Quote']['05. price']) {
           prices[ticker] = parseFloat(data['Global Quote']['05. price']);
         } else {
           prices[ticker] = Math.random() * 500 + 100;
         }
-        
+
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
         console.error(`Error fetching price for ${ticker}:`, error);
         prices[ticker] = Math.random() * 500 + 100;
       }
     }
-    
+
     setStockPrices(prices);
     setIsLoadingPrices(false);
-  }, []);
+  }, [API_KEY]);
 
   const loadTrades = useCallback(async () => {
     try {
-      const result = await window.storage.get('alphahunt_trades');
-      if (result && result.value) {
-        const loadedTrades = JSON.parse(result.value);
+      // Use localStorage for browser storage
+      const storedTrades = localStorage.getItem('alphahunt_trades');
+      if (storedTrades) {
+        const loadedTrades = JSON.parse(storedTrades);
         setTrades(loadedTrades);
         const openTickers = [...new Set(loadedTrades.filter(t => t.status === 'OPEN').map(t => t.ticker))];
         if (openTickers.length > 0) {
@@ -76,7 +79,7 @@ const AlphaHunt = () => {
 
   const saveTrades = async (updatedTrades) => {
     try {
-      await window.storage.set('alphahunt_trades', JSON.stringify(updatedTrades));
+      localStorage.setItem('alphahunt_trades', JSON.stringify(updatedTrades));
     } catch (error) {
       console.error('Error saving trades:', error);
     }
@@ -89,14 +92,13 @@ const AlphaHunt = () => {
     }
 
     setIsSearching(true);
-    const API_KEY = 'WDYQC1WE37RIXN9A';
 
     try {
       const response = await fetch(
         `https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${query}&apikey=${API_KEY}`
       );
       const data = await response.json();
-      
+
       if (data.bestMatches && data.bestMatches.length > 0) {
         const suggestions = data.bestMatches.slice(0, 15).map(match => ({
           symbol: match['1. symbol'],
@@ -118,16 +120,15 @@ const AlphaHunt = () => {
 
   const fetchCurrentPrice = async (ticker) => {
     if (!ticker) return;
-    
+
     setIsFetchingPrice(true);
-    const API_KEY = 'WDYQC1WE37RIXN9A';
 
     try {
       const response = await fetch(
         `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${ticker}&apikey=${API_KEY}`
       );
       const data = await response.json();
-      
+
       if (data['Global Quote'] && data['Global Quote']['05. price']) {
         const price = parseFloat(data['Global Quote']['05. price']);
         setNewTrade(prev => ({ ...prev, entryPrice: price.toFixed(2) }));
@@ -163,20 +164,18 @@ const AlphaHunt = () => {
 
   const calculateTradeMetrics = (trade) => {
     let exitPrice;
-    
+
     if (trade.status === 'OPEN') {
-      // For open positions, use real-time stock price if available
       exitPrice = stockPrices[trade.ticker] || trade.entryPrice;
     } else {
-      // For closed positions, use the actual exit price
       exitPrice = trade.exitPrice;
     }
-    
+
     const pnl = (exitPrice - trade.entryPrice) * trade.shares;
     const pnlPercent = ((exitPrice - trade.entryPrice) / trade.entryPrice) * 100;
     const value = exitPrice * trade.shares;
     const invested = trade.entryPrice * trade.shares;
-    
+
     return { pnl, pnlPercent, value, exitPrice, invested };
   };
 
@@ -189,17 +188,11 @@ const AlphaHunt = () => {
 
     trades.forEach(trade => {
       const { pnl, value, invested } = calculateTradeMetrics(trade);
-      
-      // Only count invested capital for open and closed positions
+
       totalInvested += invested;
-      
-      // Add current value
       totalValue += value;
-      
-      // Add P&L (works for both open and closed)
       totalPnL += pnl;
-      
-      // Only count wins/losses for closed positions
+
       if (trade.status === 'CLOSED') {
         if (pnl > 0) wins++;
         else if (pnl < 0) losses++;
@@ -216,7 +209,7 @@ const AlphaHunt = () => {
 
   const addTrade = async () => {
     if (!newTrade.ticker || !newTrade.shares || !newTrade.entryPrice || !newTrade.entryDate) return;
-    
+
     const trade = {
       id: Date.now(),
       ticker: newTrade.ticker.toUpperCase(),
@@ -233,11 +226,11 @@ const AlphaHunt = () => {
     const updatedTrades = [...trades, trade];
     setTrades(updatedTrades);
     await saveTrades(updatedTrades);
-    
+
     if (trade.status === 'OPEN') {
       fetchStockPrices(updatedTrades);
     }
-    
+
     setNewTrade({ ticker: '', type: 'BUY', shares: '', entryPrice: '', exitPrice: '', entryDate: '', exitDate: '', status: 'OPEN', sector: 'Technology' });
     setTickerSearch('');
     setTickerSuggestions([]);
@@ -404,10 +397,10 @@ const AlphaHunt = () => {
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
               <XAxis dataKey="date" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} />
               <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1f2937', 
-                  border: '1px solid #374151', 
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#1f2937',
+                  border: '1px solid #374151',
                   borderRadius: '8px',
                   color: '#fff'
                 }}
@@ -428,8 +421,8 @@ const AlphaHunt = () => {
                     key={f}
                     onClick={() => setFilter(f)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                      filter === f 
-                        ? 'bg-emerald-500 text-white' 
+                      filter === f
+                        ? 'bg-emerald-500 text-white'
                         : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
                     }`}
                   >
@@ -454,7 +447,7 @@ const AlphaHunt = () => {
                         <div>
                           <div className="text-white font-bold text-lg">{trade.ticker}</div>
                           <div className="text-gray-400 text-sm">
-                            {trade.shares} shares • {trade.sector || 'Technology'}
+                            {trade.shares} shares {trade.sector ? `• ${trade.sector}` : ''}
                           </div>
                         </div>
                       </div>
@@ -473,21 +466,21 @@ const AlphaHunt = () => {
                           {pnl >= 0 ? '+' : ''}${pnl.toFixed(2)} ({pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%)
                         </div>
                         <div className="text-xs text-gray-500">
-                          ${exitPrice.toFixed(2)} × {trade.shares} = ${(exitPrice * trade.shares).toFixed(2)}
+                          ${exitPrice.toFixed(2)} x {trade.shares} = ${(exitPrice * trade.shares).toFixed(2)}
                         </div>
                       </div>
 
                       <div className="flex items-center gap-3">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          trade.type === 'BUY' 
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                          trade.type === 'BUY'
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                             : 'bg-red-500/20 text-red-400 border border-red-500/30'
                         }`}>
                           {trade.type}
                         </span>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          trade.status === 'OPEN' 
-                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
+                          trade.status === 'OPEN'
+                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                             : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
                         }`}>
                           {trade.status}
@@ -505,7 +498,7 @@ const AlphaHunt = () => {
                         <div className="text-white font-medium flex items-center gap-1">
                           ${exitPrice.toFixed(2)}
                           {trade.status === 'OPEN' && stockPrices[trade.ticker] && (
-                            <span className="text-xs text-emerald-400">●</span>
+                            <span className="text-xs text-emerald-400">*</span>
                           )}
                         </div>
                       </div>
@@ -572,7 +565,7 @@ const AlphaHunt = () => {
                       <RefreshCw className="animate-spin text-gray-400" size={16} />
                     </div>
                   )}
-                  
+
                   {tickerSuggestions.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl max-h-60 overflow-y-auto">
                       {tickerSuggestions.map((suggestion, idx) => (
@@ -652,7 +645,7 @@ const AlphaHunt = () => {
                     )}
                   </div>
                   {newTrade.entryPrice && (
-                    <p className="text-xs text-emerald-400 mt-1">✓ Price loaded</p>
+                    <p className="text-xs text-emerald-400 mt-1">Price loaded</p>
                   )}
                 </div>
                 <div>
