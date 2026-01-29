@@ -321,31 +321,31 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {/* Stats Cards - Same 4-column layout on all screens */}
+      <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-8">
         {statCards.map((stat, i) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="bg-gray-800/40 backdrop-blur-sm border border-gray-700/50 rounded-xl p-4 sm:p-5"
+            className="bg-gray-800/40 backdrop-blur-sm border border-gray-700/50 rounded-lg sm:rounded-xl p-2 sm:p-5"
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-500 text-xs sm:text-sm">{stat.label}</span>
-              <stat.icon size={16} className={`text-${stat.color}-400`} />
+            <div className="flex items-center justify-between mb-1 sm:mb-2">
+              <span className="text-gray-500 text-[10px] sm:text-sm truncate">{stat.label}</span>
+              <stat.icon size={14} className={`text-${stat.color}-400 hidden sm:block`} />
             </div>
-            <div className={`text-xl sm:text-2xl font-bold ${stat.color === 'red' ? 'text-red-400' : 'text-white'}`}>
+            <div className={`text-sm sm:text-2xl font-bold ${stat.color === 'red' ? 'text-red-400' : 'text-white'}`}>
               {stat.value}
             </div>
             {stat.change !== undefined && (
-              <div className={`text-xs font-medium flex items-center gap-1 mt-1 ${stat.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {stat.change >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+              <div className={`text-[10px] sm:text-xs font-medium flex items-center gap-0.5 sm:gap-1 mt-0.5 sm:mt-1 ${stat.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {stat.change >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
                 {stat.change >= 0 ? '+' : ''}{stat.change.toFixed(2)}%
               </div>
             )}
             {stat.subtext && (
-              <div className="text-xs text-gray-500 mt-1">{stat.subtext}</div>
+              <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1 truncate">{stat.subtext}</div>
             )}
           </motion.div>
         ))}
@@ -356,16 +356,16 @@ const Dashboard = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="bg-gray-800/40 backdrop-blur-sm border border-gray-700/50 rounded-xl p-4 sm:p-6 mb-8"
+        className="bg-gray-800/40 backdrop-blur-sm border border-gray-700/50 rounded-lg sm:rounded-xl p-3 sm:p-6 mb-6 sm:mb-8"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <h3 className="text-lg sm:text-xl font-semibold text-white">Performance</h3>
-          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto">
+        <div className="flex items-center justify-between gap-2 mb-3 sm:mb-6">
+          <h3 className="text-sm sm:text-xl font-semibold text-white">Performance</h3>
+          <div className="flex items-center gap-1 overflow-x-auto">
             {['1D', '1W', '1M', '3M', '1Y', 'ALL'].map(tf => (
               <button
                 key={tf}
                 onClick={() => setSelectedTimeframe(tf)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
+                className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition whitespace-nowrap ${
                   selectedTimeframe === tf
                     ? 'bg-emerald-500 text-white'
                     : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
@@ -376,28 +376,31 @@ const Dashboard = () => {
             ))}
           </div>
         </div>
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={performanceHistory}>
-            <defs>
-              <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
-                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-            <XAxis dataKey="date" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} />
-            <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: '#1f2937',
-                border: '1px solid #374151',
-                borderRadius: '8px',
-                color: '#fff'
-              }}
-            />
-            <Area type="monotone" dataKey="value" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorGradient)" />
-          </AreaChart>
-        </ResponsiveContainer>
+        <div className="h-[180px] sm:h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={performanceHistory}>
+              <defs>
+                <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+              <XAxis dataKey="date" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 9 }} />
+              <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 9 }} width={40} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#1f2937',
+                  border: '1px solid #374151',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '11px'
+                }}
+              />
+              <Area type="monotone" dataKey="value" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorGradient)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       </motion.div>
 
       {/* Performance Analytics Section */}
@@ -520,26 +523,26 @@ const Dashboard = () => {
                       </div>
                     </div>
 
-                    <div className="mt-4 grid grid-cols-3 sm:grid-cols-5 gap-4 text-sm">
+                    <div className="mt-3 sm:mt-4 grid grid-cols-5 gap-2 sm:gap-4 text-xs sm:text-sm">
                       <div>
-                        <div className="text-gray-500 text-xs">Entry Price</div>
+                        <div className="text-gray-500 text-[10px] sm:text-xs">Entry</div>
                         <div className="text-white font-medium">${trade.entryPrice.toFixed(2)}</div>
                       </div>
                       <div>
-                        <div className="text-gray-500 text-xs">Current Price</div>
+                        <div className="text-gray-500 text-[10px] sm:text-xs">Current</div>
                         <div className="text-white font-medium">${exitPrice.toFixed(2)}</div>
                       </div>
                       <div>
-                        <div className="text-gray-500 text-xs">Total Value</div>
+                        <div className="text-gray-500 text-[10px] sm:text-xs">Value</div>
                         <div className="text-white font-medium">${(exitPrice * trade.shares).toFixed(2)}</div>
                       </div>
-                      <div className="hidden sm:block">
-                        <div className="text-gray-500 text-xs">Cost Basis</div>
+                      <div>
+                        <div className="text-gray-500 text-[10px] sm:text-xs">Cost</div>
                         <div className="text-white font-medium">${(trade.entryPrice * trade.shares).toFixed(2)}</div>
                       </div>
-                      <div className="hidden sm:block">
-                        <div className="text-gray-500 text-xs">Entry Date</div>
-                        <div className="text-white font-medium">{trade.entryDate}</div>
+                      <div>
+                        <div className="text-gray-500 text-[10px] sm:text-xs">Date</div>
+                        <div className="text-white font-medium text-[10px] sm:text-sm">{trade.entryDate}</div>
                       </div>
                     </div>
                   </motion.div>
