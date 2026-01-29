@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LogOut, User, ChevronDown,
-  LayoutDashboard, Star, TrendingUp, Filter
+  LayoutDashboard, Activity, TrendingUp, Filter
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -12,12 +12,12 @@ const Navbar = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const location = useLocation();
 
-  // Reordered: Dashboard, Screeners, Markets, Watchlist (no Analytics)
+  // Reordered: Dashboard, Screeners, Markets, Trade Activity (no Analytics)
   const navItems = [
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/screeners', label: 'Screeners', icon: Filter },
     { path: '/markets', label: 'Markets', icon: TrendingUp },
-    { path: '/watchlist', label: 'Watchlist', icon: Star },
+    { path: '/activity', label: 'Activity', icon: Activity },
   ];
 
   const isActive = (path) => location.pathname === path;
