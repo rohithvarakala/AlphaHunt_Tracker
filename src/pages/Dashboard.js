@@ -5,6 +5,8 @@ import {
   TrendingUp, TrendingDown, Activity, PlusCircle, X, Search,
   RefreshCw, Download, DollarSign, Percent, BarChart2
 } from 'lucide-react';
+import StockSearch from '../components/StockSearch';
+import { getStockBySymbol, SECTORS } from '../data/stockDatabase';
 
 const API_KEY = process.env.REACT_APP_ALPHA_VANTAGE_API_KEY || 'demo';
 
@@ -19,9 +21,7 @@ const Dashboard = () => {
   });
   const [filter, setFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
-  const [tickerSearch, setTickerSearch] = useState('');
-  const [tickerSuggestions, setTickerSuggestions] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [selectedStock, setSelectedStock] = useState(null);
   const [isFetchingPrice, setIsFetchingPrice] = useState(false);
   const [selectedTimeframe, setSelectedTimeframe] = useState('1M');
 
@@ -85,35 +85,6 @@ const Dashboard = () => {
     }
   };
 
-  const searchTickers = async (query) => {
-    if (!query || query.length < 1) {
-      setTickerSuggestions([]);
-      return;
-    }
-    setIsSearching(true);
-    try {
-      const response = await fetch(
-        `https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${query}&apikey=${API_KEY}`
-      );
-      const data = await response.json();
-      if (data.bestMatches && data.bestMatches.length > 0) {
-        setTickerSuggestions(data.bestMatches.slice(0, 15).map(match => ({
-          symbol: match['1. symbol'],
-          name: match['2. name'],
-          type: match['3. type'],
-          region: match['4. region']
-        })));
-      } else {
-        setTickerSuggestions([]);
-      }
-    } catch (error) {
-      console.error('Error searching tickers:', error);
-      setTickerSuggestions([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
   const fetchCurrentPrice = async (ticker) => {
     if (!ticker) return;
     setIsFetchingPrice(true);
@@ -138,21 +109,15 @@ const Dashboard = () => {
     }
   };
 
-  const selectTicker = (symbol) => {
-    setNewTrade(prev => ({ ...prev, ticker: symbol }));
-    setTickerSearch(symbol);
-    setTickerSuggestions([]);
-    fetchCurrentPrice(symbol);
+  const handleStockSelect = (stock) => {
+    setSelectedStock(stock);
+    setNewTrade(prev => ({
+      ...prev,
+      ticker: stock.symbol,
+      sector: stock.sector || prev.sector
+    }));
+    fetchCurrentPrice(stock.symbol);
   };
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (tickerSearch && tickerSearch.length >= 1) {
-        searchTickers(tickerSearch);
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [tickerSearch]);
 
   const calculateTradeMetrics = (trade) => {
     let exitPrice;
@@ -218,8 +183,7 @@ const Dashboard = () => {
     }
 
     setNewTrade({ ticker: '', type: 'BUY', shares: '', entryPrice: '', exitPrice: '', entryDate: '', exitDate: '', status: 'OPEN', sector: 'Technology' });
-    setTickerSearch('');
-    setTickerSuggestions([]);
+    setSelectedStock(null);
     setShowAddTrade(false);
   };
 
@@ -564,41 +528,17 @@ const Dashboard = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-2">Ticker Symbol</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search stocks (e.g., AAPL)..."
-                      value={tickerSearch}
-                      onChange={(e) => {
-                        setTickerSearch(e.target.value.toUpperCase());
-                        setNewTrade({...newTrade, ticker: e.target.value.toUpperCase()});
-                      }}
-                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
-                    />
-                    {isSearching && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <RefreshCw className="animate-spin text-gray-400" size={16} />
-                      </div>
-                    )}
-
-                    {tickerSuggestions.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl max-h-60 overflow-y-auto">
-                        {tickerSuggestions.map((suggestion, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => selectTicker(suggestion.symbol)}
-                            className="w-full px-4 py-3 text-left hover:bg-gray-700 transition flex items-center justify-between border-b border-gray-700 last:border-b-0"
-                          >
-                            <div>
-                              <div className="font-semibold text-white">{suggestion.symbol}</div>
-                              <div className="text-xs text-gray-500 truncate">{suggestion.name}</div>
-                            </div>
-                            <div className="text-xs text-gray-600">{suggestion.region}</div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <StockSearch
+                    onSelect={handleStockSelect}
+                    value={newTrade.ticker}
+                    placeholder="Search stocks (e.g., AAPL, Apple)..."
+                    autoFocus
+                  />
+                  {selectedStock && (
+                    <div className="mt-2 text-xs text-gray-500">
+                      {selectedStock.name} • {selectedStock.sector}
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -632,12 +572,9 @@ const Dashboard = () => {
                     onChange={(e) => setNewTrade({...newTrade, sector: e.target.value})}
                     className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                   >
-                    <option value="Technology">Technology</option>
-                    <option value="Healthcare">Healthcare</option>
-                    <option value="Finance">Finance</option>
-                    <option value="Consumer">Consumer</option>
-                    <option value="Energy">Energy</option>
-                    <option value="Industrial">Industrial</option>
+                    {SECTORS.map(sector => (
+                      <option key={sector} value={sector}>{sector}</option>
+                    ))}
                   </select>
                 </div>
 

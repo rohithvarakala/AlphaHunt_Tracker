@@ -1,18 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Star, Plus, X, Search, TrendingUp, TrendingDown,
+  Star, Plus, X, TrendingUp, TrendingDown,
   RefreshCw, Bell, BellOff, Trash2, ArrowUpRight
 } from 'lucide-react';
+import StockSearch from '../components/StockSearch';
 
 const API_KEY = process.env.REACT_APP_ALPHA_VANTAGE_API_KEY || 'demo';
 
 const Watchlist = () => {
   const [watchlist, setWatchlist] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [priceData, setPriceData] = useState({});
 
@@ -66,47 +64,12 @@ const Watchlist = () => {
     fetchPrices();
   }, [fetchPrices]);
 
-  // Search for stocks
-  const searchStocks = async (query) => {
-    if (!query || query.length < 1) {
-      setSearchResults([]);
-      return;
-    }
-    setIsSearching(true);
-    try {
-      const response = await fetch(
-        `https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${query}&apikey=${API_KEY}`
-      );
-      const data = await response.json();
-      if (data.bestMatches) {
-        setSearchResults(data.bestMatches.slice(0, 8).map(m => ({
-          symbol: m['1. symbol'],
-          name: m['2. name'],
-          type: m['3. type'],
-          region: m['4. region']
-        })));
-      }
-    } catch (error) {
-      console.error('Search error:', error);
-    }
-    setIsSearching(false);
-  };
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (searchQuery) searchStocks(searchQuery);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
   const addToWatchlist = (stock) => {
     if (!watchlist.find(w => w.symbol === stock.symbol)) {
       const newItem = { ...stock, alerts: false, addedAt: new Date().toISOString() };
       saveWatchlist([...watchlist, newItem]);
     }
     setShowAddModal(false);
-    setSearchQuery('');
-    setSearchResults([]);
   };
 
   const removeFromWatchlist = (symbol) => {
@@ -274,43 +237,18 @@ const Watchlist = () => {
                 </button>
               </div>
 
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
-                <input
-                  type="text"
-                  placeholder="Search for stocks..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+              <div className="mb-4">
+                <StockSearch
+                  onSelect={addToWatchlist}
+                  placeholder="Search for stocks (e.g., AAPL, Apple)..."
+                  showSector
                   autoFocus
                 />
-                {isSearching && (
-                  <RefreshCw className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 animate-spin" size={16} />
-                )}
               </div>
 
-              <div className="max-h-80 overflow-y-auto">
-                {searchResults.map((result) => (
-                  <button
-                    key={result.symbol}
-                    onClick={() => addToWatchlist(result)}
-                    className="w-full flex items-center justify-between p-4 hover:bg-gray-800 rounded-lg transition border-b border-gray-800 last:border-b-0"
-                  >
-                    <div className="text-left">
-                      <div className="text-white font-semibold">{result.symbol}</div>
-                      <div className="text-gray-500 text-sm truncate max-w-[250px]">{result.name}</div>
-                    </div>
-                    <div className="text-xs text-gray-600 bg-gray-800 px-2 py-1 rounded">
-                      {result.region}
-                    </div>
-                  </button>
-                ))}
-                {searchQuery && searchResults.length === 0 && !isSearching && (
-                  <div className="text-center py-8 text-gray-500">
-                    No results found for "{searchQuery}"
-                  </div>
-                )}
-              </div>
+              <p className="text-gray-500 text-sm text-center">
+                Search from 300+ stocks across all major sectors
+              </p>
             </motion.div>
           </motion.div>
         )}
