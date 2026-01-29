@@ -189,24 +189,24 @@ const PerformanceAnalytics = ({ trades, stockPrices }) => {
       {/* Section Header */}
       <div className="flex items-center gap-3">
         <BarChart2 className="text-purple-400" size={24} />
-        <h2 className="text-xl font-bold text-white">Performance Analytics</h2>
+        <h2 className="text-lg sm:text-xl font-bold text-white">Performance Analytics</h2>
       </div>
 
-      {/* Key Metrics Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      {/* Key Metrics Grid - Optimized for mobile */}
+      <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
         {metricCards.map((metric, i) => (
           <motion.div
             key={metric.label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4"
+            className="bg-gray-800/40 border border-gray-700/50 rounded-lg sm:rounded-xl p-2 sm:p-4"
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-500 text-xs">{metric.label}</span>
-              <metric.icon size={14} className={`text-${metric.color}-400`} />
+            <div className="flex items-center justify-between mb-1 sm:mb-2">
+              <span className="text-gray-500 text-[10px] sm:text-xs truncate">{metric.label}</span>
+              <metric.icon size={12} className={`text-${metric.color}-400 hidden sm:block`} />
             </div>
-            <div className={`text-lg font-bold ${
+            <div className={`text-sm sm:text-lg font-bold ${
               metric.color === 'red' ? 'text-red-400' :
               metric.color === 'yellow' ? 'text-yellow-400' :
               'text-white'
@@ -214,43 +214,45 @@ const PerformanceAnalytics = ({ trades, stockPrices }) => {
               {metric.value}
             </div>
             {metric.subtext && (
-              <div className="text-xs text-gray-500 mt-1">{metric.subtext}</div>
+              <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1 truncate">{metric.subtext}</div>
             )}
           </motion.div>
         ))}
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Equity Curve */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4 sm:p-5"
+          className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-3 sm:p-5"
         >
-          <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp size={18} className="text-emerald-400" />
+          <h3 className="text-white font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
+            <TrendingUp size={16} className="text-emerald-400" />
             Equity Curve
           </h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={analytics.equityCurve}>
-              <defs>
-                <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-              <XAxis dataKey="date" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-              <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 10 }} tickFormatter={(v) => `$${v}`} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
-                labelStyle={{ color: '#fff' }}
-                formatter={(value) => [`$${value.toFixed(2)}`, 'P&L']}
-              />
-              <Area type="monotone" dataKey="equity" stroke="#10b981" strokeWidth={2} fill="url(#equityGradient)" />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div className="h-[150px] sm:h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={analytics.equityCurve}>
+                <defs>
+                  <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                <XAxis dataKey="date" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 9 }} interval="preserveStartEnd" />
+                <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 9 }} tickFormatter={(v) => `$${v}`} width={45} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', fontSize: '12px' }}
+                  labelStyle={{ color: '#fff' }}
+                  formatter={(value) => [`$${value.toFixed(2)}`, 'P&L']}
+                />
+                <Area type="monotone" dataKey="equity" stroke="#10b981" strokeWidth={2} fill="url(#equityGradient)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </motion.div>
 
         {/* Drawdown Chart */}
@@ -258,31 +260,33 @@ const PerformanceAnalytics = ({ trades, stockPrices }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4 sm:p-5"
+          className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-3 sm:p-5"
         >
-          <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-            <TrendingDown size={18} className="text-red-400" />
+          <h3 className="text-white font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
+            <TrendingDown size={16} className="text-red-400" />
             Drawdown
           </h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={analytics.drawdownData}>
-              <defs>
-                <linearGradient id="drawdownGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4}/>
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-              <XAxis dataKey="date" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-              <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 10 }} tickFormatter={(v) => `${v}%`} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
-                labelStyle={{ color: '#fff' }}
-                formatter={(value) => [`${value.toFixed(2)}%`, 'Drawdown']}
-              />
-              <Area type="monotone" dataKey="drawdown" stroke="#ef4444" strokeWidth={2} fill="url(#drawdownGradient)" />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div className="h-[150px] sm:h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={analytics.drawdownData}>
+                <defs>
+                  <linearGradient id="drawdownGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                <XAxis dataKey="date" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 9 }} interval="preserveStartEnd" />
+                <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 9 }} tickFormatter={(v) => `${v}%`} width={40} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', fontSize: '12px' }}
+                  labelStyle={{ color: '#fff' }}
+                  formatter={(value) => [`${value.toFixed(2)}%`, 'Drawdown']}
+                />
+                <Area type="monotone" dataKey="drawdown" stroke="#ef4444" strokeWidth={2} fill="url(#drawdownGradient)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </motion.div>
       </div>
 
