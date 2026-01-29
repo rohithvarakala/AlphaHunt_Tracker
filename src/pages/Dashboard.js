@@ -403,17 +403,15 @@ const Dashboard = () => {
         </div>
       </motion.div>
 
-      {/* Performance Analytics Section */}
-      {trades.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="mb-8"
-        >
-          <PerformanceAnalytics trades={trades} stockPrices={stockPrices} />
-        </motion.div>
-      )}
+      {/* Performance Analytics Section - Always visible */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+        className="mb-6 sm:mb-8"
+      >
+        <PerformanceAnalytics trades={trades} stockPrices={stockPrices} />
+      </motion.div>
 
       {/* Positions List */}
       <motion.div
