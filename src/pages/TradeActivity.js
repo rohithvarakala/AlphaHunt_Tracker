@@ -3,9 +3,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity, Bell, BellOff, Star, Plus, X, TrendingUp, TrendingDown,
   RefreshCw, Trash2, ArrowUpRight, ArrowDownRight, Clock, MessageSquare,
-  CheckCircle, AlertCircle, Zap, Target, DollarSign, Filter
+  CheckCircle, AlertCircle, Zap, Target, DollarSign, Filter, Cloud, HardDrive
 } from 'lucide-react';
 import StockSearch from '../components/StockSearch';
+import { useAuth } from '../contexts/AuthContext';
+import {
+  subscribeToWatchlist,
+  addToWatchlist as addToWatchlistFirestore,
+  removeFromWatchlist as removeFromWatchlistFirestore,
+  toggleWatchlistAlerts
+} from '../services/firestore';
 
 const API_KEY = process.env.REACT_APP_ALPHA_VANTAGE_API_KEY || 'demo';
 
@@ -33,6 +40,7 @@ const generateSignals = () => [
 ];
 
 const TradeActivity = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('feed');
   const [verifiedTrades] = useState(() => generateVerifiedTrades());
   const [signals] = useState(() => generateSignals());
@@ -42,16 +50,28 @@ const TradeActivity = () => {
   const [priceData, setPriceData] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [filterAction, setFilterAction] = useState('all');
+  const [isCloudSynced, setIsCloudSynced] = useState(false);
 
-  // Load watchlist from localStorage
+  // Load watchlist from Firestore (logged in) or localStorage (guest)
   useEffect(() => {
-    const saved = localStorage.getItem('alphahunt_watchlist');
-    if (saved) {
-      setWatchlist(JSON.parse(saved));
+    if (user) {
+      // Subscribe to real-time Firestore updates
+      setIsCloudSynced(true);
+      const unsubscribe = subscribeToWatchlist(user.uid, (firestoreWatchlist) => {
+        setWatchlist(firestoreWatchlist);
+      });
+      return () => unsubscribe();
+    } else {
+      // Fall back to localStorage for guests
+      setIsCloudSynced(false);
+      const saved = localStorage.getItem('alphahunt_watchlist');
+      if (saved) {
+        setWatchlist(JSON.parse(saved));
+      }
     }
-  }, []);
+  }, [user]);
 
-  const saveWatchlist = (list) => {
+  const saveWatchlistLocal = (list) => {
     localStorage.setItem('alphahunt_watchlist', JSON.stringify(list));
     setWatchlist(list);
   };
@@ -90,22 +110,51 @@ const TradeActivity = () => {
     }
   }, [activeTab, fetchPrices]);
 
-  const addToWatchlist = (stock) => {
+  const addToWatchlist = async (stock) => {
     if (!watchlist.find(w => w.symbol === stock.symbol)) {
-      const newItem = { ...stock, alerts: true, addedAt: new Date().toISOString() };
-      saveWatchlist([...watchlist, newItem]);
+      if (user) {
+        // Save to Firestore
+        try {
+          await addToWatchlistFirestore(user.uid, stock);
+        } catch (error) {
+          console.error('Error adding to watchlist:', error);
+        }
+      } else {
+        // Save to localStorage for guests
+        const newItem = { ...stock, alerts: true, addedAt: new Date().toISOString() };
+        saveWatchlistLocal([...watchlist, newItem]);
+      }
     }
     setShowAddModal(false);
   };
 
-  const removeFromWatchlist = (symbol) => {
-    saveWatchlist(watchlist.filter(w => w.symbol !== symbol));
+  const removeFromWatchlist = async (symbol) => {
+    if (user) {
+      try {
+        await removeFromWatchlistFirestore(user.uid, symbol);
+      } catch (error) {
+        console.error('Error removing from watchlist:', error);
+      }
+    } else {
+      saveWatchlistLocal(watchlist.filter(w => w.symbol !== symbol));
+    }
   };
 
-  const toggleAlerts = (symbol) => {
-    saveWatchlist(watchlist.map(w =>
-      w.symbol === symbol ? { ...w, alerts: !w.alerts } : w
-    ));
+  const toggleAlerts = async (symbol) => {
+    const item = watchlist.find(w => w.symbol === symbol);
+    if (!item) return;
+
+    if (user) {
+      try {
+        await toggleWatchlistAlerts(user.uid, symbol, !item.alerts);
+      } catch (error) {
+        console.error('Error toggling alerts:', error);
+      }
+    } else {
+      saveWatchlistLocal(watchlist.map(w =>
+        w.symbol === symbol ? { ...w, alerts: !w.alerts } : w
+      ));
+    }
   };
 
   const formatTime = (date) => {
@@ -136,7 +185,18 @@ const TradeActivity = () => {
             <Activity className="text-emerald-400" size={28} />
             Trade Activity
           </h1>
-          <p className="text-gray-500 mt-1">Verified trades, signals & your watchlist</p>
+          <div className="flex items-center gap-3 mt-1">
+            <p className="text-gray-500">Verified trades, signals & your watchlist</p>
+            {/* Cloud sync indicator */}
+            <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded ${
+              isCloudSynced
+                ? 'bg-emerald-500/20 text-emerald-400'
+                : 'bg-gray-700/50 text-gray-400'
+            }`}>
+              {isCloudSynced ? <Cloud size={12} /> : <HardDrive size={12} />}
+              {isCloudSynced ? 'Synced' : 'Local only'}
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button

@@ -3,16 +3,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import {
   TrendingUp, TrendingDown, Activity, PlusCircle, X, Search,
-  RefreshCw, Download, DollarSign, Percent, BarChart2
+  RefreshCw, Download, DollarSign, Percent, BarChart2, Cloud, CloudOff
 } from 'lucide-react';
 import StockSearch from '../components/StockSearch';
 import PerformanceAnalytics from '../components/PerformanceAnalytics';
 import { getStockBySymbol, SECTORS } from '../data/stockDatabase';
+import { useAuth } from '../contexts/AuthContext';
+import {
+  subscribeToTrades,
+  addTrade as addTradeToFirestore,
+  deleteTrade as deleteTradeFromFirestore
+} from '../services/firestore';
 
 const API_KEY = process.env.REACT_APP_ALPHA_VANTAGE_API_KEY || 'demo';
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const [trades, setTrades] = useState([]);
+  const [isCloudSynced, setIsCloudSynced] = useState(false);
   const [showAddTrade, setShowAddTrade] = useState(false);
   const [stockPrices, setStockPrices] = useState({});
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
@@ -58,27 +66,40 @@ const Dashboard = () => {
     setIsLoadingPrices(false);
   }, []);
 
-  const loadTrades = useCallback(async () => {
-    try {
-      const storedTrades = localStorage.getItem('alphahunt_trades');
-      if (storedTrades) {
-        const loadedTrades = JSON.parse(storedTrades);
-        setTrades(loadedTrades);
-        const openTickers = [...new Set(loadedTrades.filter(t => t.status === 'OPEN').map(t => t.ticker))];
-        if (openTickers.length > 0) {
-          fetchStockPrices(loadedTrades);
-        }
-      }
-    } catch (error) {
-      console.log('No existing trades found, starting fresh');
-    }
-  }, [fetchStockPrices]);
-
+  // Load trades from Firestore (if logged in) or localStorage
   useEffect(() => {
-    loadTrades();
-  }, [loadTrades]);
+    if (user) {
+      // Subscribe to Firestore for real-time updates
+      setIsCloudSynced(true);
+      const unsubscribe = subscribeToTrades(user.uid, (firestoreTrades) => {
+        setTrades(firestoreTrades);
+        const openTickers = [...new Set(firestoreTrades.filter(t => t.status === 'OPEN').map(t => t.ticker))];
+        if (openTickers.length > 0) {
+          fetchStockPrices(firestoreTrades);
+        }
+      });
+      return () => unsubscribe();
+    } else {
+      // Fall back to localStorage for guests
+      setIsCloudSynced(false);
+      try {
+        const storedTrades = localStorage.getItem('alphahunt_trades');
+        if (storedTrades) {
+          const loadedTrades = JSON.parse(storedTrades);
+          setTrades(loadedTrades);
+          const openTickers = [...new Set(loadedTrades.filter(t => t.status === 'OPEN').map(t => t.ticker))];
+          if (openTickers.length > 0) {
+            fetchStockPrices(loadedTrades);
+          }
+        }
+      } catch (error) {
+        console.log('No existing trades found, starting fresh');
+      }
+    }
+  }, [user, fetchStockPrices]);
 
-  const saveTrades = async (updatedTrades) => {
+  // Save trades to localStorage (for guests only)
+  const saveLocalTrades = async (updatedTrades) => {
     try {
       localStorage.setItem('alphahunt_trades', JSON.stringify(updatedTrades));
     } catch (error) {
@@ -163,7 +184,6 @@ const Dashboard = () => {
     if (!newTrade.ticker || !newTrade.shares || !newTrade.entryPrice || !newTrade.entryDate) return;
 
     const trade = {
-      id: Date.now(),
       ticker: newTrade.ticker.toUpperCase(),
       type: newTrade.type,
       shares: parseFloat(newTrade.shares),
@@ -175,12 +195,23 @@ const Dashboard = () => {
       sector: newTrade.sector
     };
 
-    const updatedTrades = [...trades, trade];
-    setTrades(updatedTrades);
-    await saveTrades(updatedTrades);
+    try {
+      if (user) {
+        // Save to Firestore (real-time subscription will update state)
+        await addTradeToFirestore(user.uid, trade);
+      } else {
+        // Save to localStorage for guests
+        const tradeWithId = { ...trade, id: Date.now() };
+        const updatedTrades = [...trades, tradeWithId];
+        setTrades(updatedTrades);
+        await saveLocalTrades(updatedTrades);
 
-    if (trade.status === 'OPEN') {
-      fetchStockPrices(updatedTrades);
+        if (trade.status === 'OPEN') {
+          fetchStockPrices(updatedTrades);
+        }
+      }
+    } catch (error) {
+      console.error('Error adding trade:', error);
     }
 
     setNewTrade({ ticker: '', type: 'BUY', shares: '', entryPrice: '', exitPrice: '', entryDate: '', exitDate: '', status: 'OPEN', sector: 'Technology' });
@@ -189,9 +220,19 @@ const Dashboard = () => {
   };
 
   const deleteTrade = async (id) => {
-    const updatedTrades = trades.filter(t => t.id !== id);
-    setTrades(updatedTrades);
-    await saveTrades(updatedTrades);
+    try {
+      if (user) {
+        // Delete from Firestore
+        await deleteTradeFromFirestore(user.uid, id);
+      } else {
+        // Delete from localStorage for guests
+        const updatedTrades = trades.filter(t => t.id !== id);
+        setTrades(updatedTrades);
+        await saveLocalTrades(updatedTrades);
+      }
+    } catch (error) {
+      console.error('Error deleting trade:', error);
+    }
   };
 
   const exportToCSV = () => {
@@ -242,7 +283,18 @@ const Dashboard = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white">Dashboard</h1>
-          <p className="text-gray-500 mt-1">Track your portfolio performance</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-gray-500">Track your portfolio performance</p>
+            {isCloudSynced ? (
+              <span className="flex items-center gap-1 text-xs text-emerald-400">
+                <Cloud size={12} /> Synced
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-xs text-gray-500">
+                <CloudOff size={12} /> Local only
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button
