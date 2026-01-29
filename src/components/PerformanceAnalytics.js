@@ -192,21 +192,21 @@ const PerformanceAnalytics = ({ trades, stockPrices }) => {
         <h2 className="text-lg sm:text-xl font-bold text-white">Performance Analytics</h2>
       </div>
 
-      {/* Key Metrics Grid - Optimized for mobile */}
-      <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+      {/* Key Metrics Grid - Same 6-column layout on all screens */}
+      <div className="grid grid-cols-6 gap-1.5 sm:gap-3">
         {metricCards.map((metric, i) => (
           <motion.div
             key={metric.label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="bg-gray-800/40 border border-gray-700/50 rounded-lg sm:rounded-xl p-2 sm:p-4"
+            className="bg-gray-800/40 border border-gray-700/50 rounded-lg sm:rounded-xl p-1.5 sm:p-4"
           >
-            <div className="flex items-center justify-between mb-1 sm:mb-2">
-              <span className="text-gray-500 text-[10px] sm:text-xs truncate">{metric.label}</span>
-              <metric.icon size={12} className={`text-${metric.color}-400 hidden sm:block`} />
+            <div className="flex items-center justify-between mb-0.5 sm:mb-2">
+              <span className="text-gray-500 text-[8px] sm:text-xs truncate">{metric.label}</span>
+              <metric.icon size={10} className={`text-${metric.color}-400 hidden sm:block`} />
             </div>
-            <div className={`text-sm sm:text-lg font-bold ${
+            <div className={`text-[11px] sm:text-lg font-bold ${
               metric.color === 'red' ? 'text-red-400' :
               metric.color === 'yellow' ? 'text-yellow-400' :
               'text-white'
@@ -214,25 +214,25 @@ const PerformanceAnalytics = ({ trades, stockPrices }) => {
               {metric.value}
             </div>
             {metric.subtext && (
-              <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1 truncate">{metric.subtext}</div>
+              <div className="text-[8px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1 truncate">{metric.subtext}</div>
             )}
           </motion.div>
         ))}
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      {/* Charts Row - Side by side on all screens */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-6">
         {/* Equity Curve */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-3 sm:p-5"
+          className="bg-gray-800/40 border border-gray-700/50 rounded-lg sm:rounded-xl p-2 sm:p-5"
         >
-          <h3 className="text-white font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-            <TrendingUp size={16} className="text-emerald-400" />
+          <h3 className="text-white font-semibold mb-2 sm:mb-4 flex items-center gap-1 sm:gap-2 text-xs sm:text-base">
+            <TrendingUp size={14} className="text-emerald-400" />
             Equity Curve
           </h3>
-          <div className="h-[150px] sm:h-[200px]">
+          <div className="h-[120px] sm:h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={analytics.equityCurve}>
                 <defs>
@@ -242,10 +242,10 @@ const PerformanceAnalytics = ({ trades, stockPrices }) => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-                <XAxis dataKey="date" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 9 }} interval="preserveStartEnd" />
-                <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 9 }} tickFormatter={(v) => `$${v}`} width={45} />
+                <XAxis dataKey="date" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 8 }} interval="preserveStartEnd" />
+                <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 8 }} tickFormatter={(v) => `$${v}`} width={35} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', fontSize: '12px' }}
+                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', fontSize: '10px' }}
                   labelStyle={{ color: '#fff' }}
                   formatter={(value) => [`$${value.toFixed(2)}`, 'P&L']}
                 />
@@ -260,13 +260,13 @@ const PerformanceAnalytics = ({ trades, stockPrices }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-3 sm:p-5"
+          className="bg-gray-800/40 border border-gray-700/50 rounded-lg sm:rounded-xl p-2 sm:p-5"
         >
-          <h3 className="text-white font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-            <TrendingDown size={16} className="text-red-400" />
+          <h3 className="text-white font-semibold mb-2 sm:mb-4 flex items-center gap-1 sm:gap-2 text-xs sm:text-base">
+            <TrendingDown size={14} className="text-red-400" />
             Drawdown
           </h3>
-          <div className="h-[150px] sm:h-[200px]">
+          <div className="h-[120px] sm:h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={analytics.drawdownData}>
                 <defs>
@@ -276,10 +276,10 @@ const PerformanceAnalytics = ({ trades, stockPrices }) => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-                <XAxis dataKey="date" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 9 }} interval="preserveStartEnd" />
-                <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 9 }} tickFormatter={(v) => `${v}%`} width={40} />
+                <XAxis dataKey="date" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 8 }} interval="preserveStartEnd" />
+                <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 8 }} tickFormatter={(v) => `${v}%`} width={30} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', fontSize: '12px' }}
+                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', fontSize: '10px' }}
                   labelStyle={{ color: '#fff' }}
                   formatter={(value) => [`${value.toFixed(2)}%`, 'Drawdown']}
                 />
@@ -290,36 +290,38 @@ const PerformanceAnalytics = ({ trades, stockPrices }) => {
         </motion.div>
       </div>
 
-      {/* Day Performance & Monthly */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Day Performance & Monthly - Side by side on all screens */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-6">
         {/* Day of Week Performance */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4 sm:p-5"
+          className="bg-gray-800/40 border border-gray-700/50 rounded-lg sm:rounded-xl p-2 sm:p-5"
         >
-          <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-            <Calendar size={18} className="text-blue-400" />
-            Performance by Day
+          <h3 className="text-white font-semibold mb-2 sm:mb-4 flex items-center gap-1 sm:gap-2 text-xs sm:text-base">
+            <Calendar size={14} className="text-blue-400" />
+            By Day
           </h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={analytics.dayPerformance}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-              <XAxis dataKey="day" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} />
-              <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 10 }} tickFormatter={(v) => `${v}%`} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
-                labelStyle={{ color: '#fff' }}
-                formatter={(value) => [`${value.toFixed(2)}%`, 'Avg Return']}
-              />
-              <Bar dataKey="avgPnl" radius={[4, 4, 0, 0]}>
-                {analytics.dayPerformance.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.avgPnl >= 0 ? '#10b981' : '#ef4444'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="h-[120px] sm:h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={analytics.dayPerformance}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                <XAxis dataKey="day" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 8 }} />
+                <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 8 }} tickFormatter={(v) => `${v}%`} width={25} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', fontSize: '10px' }}
+                  labelStyle={{ color: '#fff' }}
+                  formatter={(value) => [`${value.toFixed(2)}%`, 'Avg Return']}
+                />
+                <Bar dataKey="avgPnl" radius={[4, 4, 0, 0]}>
+                  {analytics.dayPerformance.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.avgPnl >= 0 ? '#10b981' : '#ef4444'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </motion.div>
 
         {/* Monthly Performance */}
@@ -327,29 +329,31 @@ const PerformanceAnalytics = ({ trades, stockPrices }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4 sm:p-5"
+          className="bg-gray-800/40 border border-gray-700/50 rounded-lg sm:rounded-xl p-2 sm:p-5"
         >
-          <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-            <BarChart2 size={18} className="text-purple-400" />
-            Monthly Returns
+          <h3 className="text-white font-semibold mb-2 sm:mb-4 flex items-center gap-1 sm:gap-2 text-xs sm:text-base">
+            <BarChart2 size={14} className="text-purple-400" />
+            Monthly
           </h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={analytics.monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-              <XAxis dataKey="month" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-              <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 10 }} tickFormatter={(v) => `${v}%`} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
-                labelStyle={{ color: '#fff' }}
-                formatter={(value, name) => [name === 'pnl' ? `${value.toFixed(2)}%` : value, name === 'pnl' ? 'Return' : 'Trades']}
-              />
-              <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
-                {analytics.monthlyData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? '#10b981' : '#ef4444'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="h-[120px] sm:h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={analytics.monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                <XAxis dataKey="month" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 8 }} />
+                <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 8 }} tickFormatter={(v) => `${v}%`} width={25} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', fontSize: '10px' }}
+                  labelStyle={{ color: '#fff' }}
+                  formatter={(value, name) => [name === 'pnl' ? `${value.toFixed(2)}%` : value, name === 'pnl' ? 'Return' : 'Trades']}
+                />
+                <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
+                  {analytics.monthlyData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? '#10b981' : '#ef4444'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </motion.div>
       </div>
 
@@ -407,26 +411,26 @@ const PerformanceAnalytics = ({ trades, stockPrices }) => {
       </motion.div>
 
       {/* Win/Loss Summary */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4"
+          className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg sm:rounded-xl p-2 sm:p-4"
         >
-          <div className="text-emerald-400 text-sm font-medium mb-1">Average Win</div>
-          <div className="text-2xl font-bold text-emerald-400">+{analytics.avgWin.toFixed(2)}%</div>
-          <div className="text-gray-500 text-xs mt-1">{analytics.wins} winning trades</div>
+          <div className="text-emerald-400 text-xs sm:text-sm font-medium mb-0.5 sm:mb-1">Average Win</div>
+          <div className="text-lg sm:text-2xl font-bold text-emerald-400">+{analytics.avgWin.toFixed(2)}%</div>
+          <div className="text-gray-500 text-[10px] sm:text-xs mt-0.5 sm:mt-1">{analytics.wins} winning trades</div>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.55 }}
-          className="bg-red-500/10 border border-red-500/30 rounded-xl p-4"
+          className="bg-red-500/10 border border-red-500/30 rounded-lg sm:rounded-xl p-2 sm:p-4"
         >
-          <div className="text-red-400 text-sm font-medium mb-1">Average Loss</div>
-          <div className="text-2xl font-bold text-red-400">{analytics.avgLoss.toFixed(2)}%</div>
-          <div className="text-gray-500 text-xs mt-1">{analytics.losses} losing trades</div>
+          <div className="text-red-400 text-xs sm:text-sm font-medium mb-0.5 sm:mb-1">Average Loss</div>
+          <div className="text-lg sm:text-2xl font-bold text-red-400">{analytics.avgLoss.toFixed(2)}%</div>
+          <div className="text-gray-500 text-[10px] sm:text-xs mt-0.5 sm:mt-1">{analytics.losses} losing trades</div>
         </motion.div>
       </div>
     </div>
