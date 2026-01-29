@@ -10,7 +10,9 @@
     "firebase": "^10.7.0",
     "recharts": "^2.5.0",
     "lucide-react": "^0.263.1",
-    "framer-motion": "^10.16.0"
+    "framer-motion": "^10.16.0",
+    "@vercel/analytics": "^1.1.1",
+    "@vercel/speed-insights": "^1.0.2"
   },
   "devDependencies": {
     "tailwindcss": "^3.3.0",

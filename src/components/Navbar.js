@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Menu, X, LogOut, User, ChevronDown,
-  LayoutDashboard, Star, TrendingUp, Filter
+  LayoutDashboard, Star, TrendingUp, Filter, BarChart3
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -18,6 +18,7 @@ const Navbar = () => {
     { path: '/watchlist', label: 'Watchlist', icon: Star },
     { path: '/markets', label: 'Markets', icon: TrendingUp },
     { path: '/screeners', label: 'Screeners', icon: Filter },
+    { path: '/analytics', label: 'Analytics', icon: BarChart3 },
   ];
 
   const isActive = (path) => location.pathname === path;
