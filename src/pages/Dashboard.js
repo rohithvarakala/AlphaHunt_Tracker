@@ -17,6 +17,25 @@ import {
 
 const API_KEY = process.env.REACT_APP_ALPHA_VANTAGE_API_KEY || 'demo';
 
+// Demo trades to showcase the dashboard features
+const DEMO_TRADES = [
+  { id: 'demo-1', ticker: 'NVDA', type: 'BUY', shares: 25, entryPrice: 450.00, exitPrice: 875.50, entryDate: '2024-06-15', exitDate: '2025-01-20', status: 'CLOSED', sector: 'Technology' },
+  { id: 'demo-2', ticker: 'AAPL', type: 'BUY', shares: 50, entryPrice: 165.00, exitPrice: 178.25, entryDate: '2024-08-10', exitDate: '2025-01-15', status: 'CLOSED', sector: 'Technology' },
+  { id: 'demo-3', ticker: 'TSLA', type: 'BUY', shares: 30, entryPrice: 180.00, exitPrice: null, entryDate: '2024-11-01', exitDate: null, status: 'OPEN', sector: 'Automotive' },
+  { id: 'demo-4', ticker: 'META', type: 'BUY', shares: 20, entryPrice: 320.00, exitPrice: 505.75, entryDate: '2024-07-20', exitDate: '2025-01-10', status: 'CLOSED', sector: 'Technology' },
+  { id: 'demo-5', ticker: 'GOOGL', type: 'BUY', shares: 40, entryPrice: 130.00, exitPrice: null, entryDate: '2024-12-05', exitDate: null, status: 'OPEN', sector: 'Technology' },
+  { id: 'demo-6', ticker: 'AMZN', type: 'BUY', shares: 35, entryPrice: 145.00, exitPrice: 185.20, entryDate: '2024-09-15', exitDate: '2025-01-18', status: 'CLOSED', sector: 'E-Commerce' },
+  { id: 'demo-7', ticker: 'MSFT', type: 'BUY', shares: 15, entryPrice: 380.00, exitPrice: null, entryDate: '2024-10-20', exitDate: null, status: 'OPEN', sector: 'Technology' },
+  { id: 'demo-8', ticker: 'AMD', type: 'BUY', shares: 60, entryPrice: 110.00, exitPrice: 135.50, entryDate: '2024-05-10', exitDate: '2024-08-25', status: 'CLOSED', sector: 'Technology' },
+];
+
+// Demo stock prices for open positions
+const DEMO_PRICES = {
+  'TSLA': 245.00,
+  'GOOGL': 175.50,
+  'MSFT': 415.00,
+};
+
 const Dashboard = () => {
   const { user } = useAuth();
   const [trades, setTrades] = useState([]);
@@ -33,6 +52,11 @@ const Dashboard = () => {
   const [selectedStock, setSelectedStock] = useState(null);
   const [isFetchingPrice, setIsFetchingPrice] = useState(false);
   const [selectedTimeframe, setSelectedTimeframe] = useState('1M');
+  const [showingDemo, setShowingDemo] = useState(false);
+
+  // Use demo trades when no real trades exist
+  const displayTrades = trades.length > 0 ? trades : DEMO_TRADES;
+  const displayPrices = trades.length > 0 ? stockPrices : { ...stockPrices, ...DEMO_PRICES };
 
   const fetchStockPrices = useCallback(async (tradesToFetch) => {
     setIsLoadingPrices(true);
@@ -144,7 +168,7 @@ const Dashboard = () => {
   const calculateTradeMetrics = (trade) => {
     let exitPrice;
     if (trade.status === 'OPEN') {
-      exitPrice = stockPrices[trade.ticker] || trade.entryPrice;
+      exitPrice = displayPrices[trade.ticker] || trade.entryPrice;
     } else {
       exitPrice = trade.exitPrice;
     }
@@ -162,7 +186,7 @@ const Dashboard = () => {
     let wins = 0;
     let losses = 0;
 
-    trades.forEach(trade => {
+    displayTrades.forEach(trade => {
       const { pnl, value, invested } = calculateTradeMetrics(trade);
       totalInvested += invested;
       totalValue += value;
@@ -264,7 +288,7 @@ const Dashboard = () => {
     { date: 'Jan 23', value: stats.totalValue },
   ];
 
-  const filteredTrades = trades.filter(trade => {
+  const filteredTrades = displayTrades.filter(trade => {
     const matchesFilter = filter === 'ALL' || trade.status === filter;
     const matchesSearch = trade.ticker.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
@@ -274,7 +298,7 @@ const Dashboard = () => {
     { label: 'Portfolio Value', value: `$${stats.totalValue.toFixed(2)}`, change: stats.totalReturn, icon: DollarSign, color: 'emerald' },
     { label: 'Total P&L', value: `$${stats.totalPnL.toFixed(2)}`, subtext: `Invested: $${stats.totalInvested.toFixed(2)}`, icon: TrendingUp, color: stats.totalPnL >= 0 ? 'emerald' : 'red' },
     { label: 'Win Rate', value: `${stats.winRate.toFixed(1)}%`, subtext: `${stats.wins}W / ${stats.losses}L`, icon: Percent, color: 'blue' },
-    { label: 'Active Positions', value: trades.filter(t => t.status === 'OPEN').length, subtext: `${trades.length} total trades`, icon: BarChart2, color: 'purple' },
+    { label: 'Active Positions', value: displayTrades.filter(t => t.status === 'OPEN').length, subtext: `${displayTrades.length} total trades`, icon: BarChart2, color: 'purple' },
   ];
 
   return (
@@ -410,7 +434,12 @@ const Dashboard = () => {
         transition={{ delay: 0.25 }}
         className="mb-6 sm:mb-8"
       >
-        <PerformanceAnalytics trades={trades} stockPrices={stockPrices} />
+        {trades.length === 0 && (
+          <div className="mb-3 px-3 py-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+            <p className="text-blue-400 text-xs sm:text-sm">Showing demo data. Add your own trades to see your real performance.</p>
+          </div>
+        )}
+        <PerformanceAnalytics trades={displayTrades} stockPrices={displayPrices} />
       </motion.div>
 
       {/* Positions List */}
@@ -487,7 +516,7 @@ const Dashboard = () => {
                             {trade.status === 'OPEN' && isLoadingPrices && (
                               <RefreshCw size={14} className="text-emerald-400 animate-spin" />
                             )}
-                            {trade.status === 'OPEN' && stockPrices[trade.ticker] && (
+                            {trade.status === 'OPEN' && displayPrices[trade.ticker] && (
                               <span className="text-xs px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded">Live</span>
                             )}
                           </div>
@@ -511,12 +540,14 @@ const Dashboard = () => {
                           }`}>
                             {trade.status}
                           </span>
-                          <button
-                            onClick={() => deleteTrade(trade.id)}
-                            className="p-1.5 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
-                          >
-                            <X size={16} />
-                          </button>
+                          {!String(trade.id).startsWith('demo-') && (
+                            <button
+                              onClick={() => deleteTrade(trade.id)}
+                              className="p-1.5 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
+                            >
+                              <X size={16} />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
