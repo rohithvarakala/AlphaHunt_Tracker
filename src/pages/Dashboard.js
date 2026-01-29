@@ -6,6 +6,7 @@ import {
   RefreshCw, Download, DollarSign, Percent, BarChart2
 } from 'lucide-react';
 import StockSearch from '../components/StockSearch';
+import PerformanceAnalytics from '../components/PerformanceAnalytics';
 import { getStockBySymbol, SECTORS } from '../data/stockDatabase';
 
 const API_KEY = process.env.REACT_APP_ALPHA_VANTAGE_API_KEY || 'demo';
@@ -346,6 +347,18 @@ const Dashboard = () => {
           </AreaChart>
         </ResponsiveContainer>
       </motion.div>
+
+      {/* Performance Analytics Section */}
+      {trades.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="mb-8"
+        >
+          <PerformanceAnalytics trades={trades} stockPrices={stockPrices} />
+        </motion.div>
+      )}
 
       {/* Positions List */}
       <motion.div

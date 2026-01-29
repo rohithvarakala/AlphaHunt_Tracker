@@ -7,7 +7,7 @@ import { initGA } from './utils/analytics';
 import Navbar from './components/Navbar';
 import PageTracker from './components/PageTracker';
 import Dashboard from './pages/Dashboard';
-import Watchlist from './pages/Watchlist';
+import TradeActivity from './pages/TradeActivity';
 import Markets from './pages/Markets';
 import Screeners from './pages/Screeners';
 import Analytics from './pages/Analytics';
@@ -27,7 +27,7 @@ function App() {
           <main className="pb-20 md:pb-0">
             <Routes>
               <Route path="/" element={<Dashboard />} />
-              <Route path="/watchlist" element={<Watchlist />} />
+              <Route path="/activity" element={<TradeActivity />} />
               <Route path="/markets" element={<Markets />} />
               <Route path="/screeners" element={<Screeners />} />
               <Route path="/analytics" element={<Analytics />} />
