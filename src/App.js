@@ -24,7 +24,7 @@ function App() {
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
           <Navbar />
           <PageTracker />
-          <main>
+          <main className="pb-20 md:pb-0">
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/watchlist" element={<Watchlist />} />
