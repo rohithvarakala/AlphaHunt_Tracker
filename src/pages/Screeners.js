@@ -232,6 +232,7 @@ const Screeners = () => {
   const [sortConfig, setSortConfig] = useState({ key: 'mcapValue', direction: 'desc' });
   const [expandedCategories, setExpandedCategories] = useState(['technical']);
   const [showFilters, setShowFilters] = useState(true);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 50;
 
@@ -346,9 +347,20 @@ const Screeners = () => {
               <RotateCcw size={16} /> Clear All
             </button>
           )}
+          {/* Desktop filter toggle */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition text-sm font-medium ${showFilters ? 'bg-purple-500 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+            className={`hidden lg:flex items-center gap-2 px-4 py-2 rounded-lg transition text-sm font-medium ${showFilters ? 'bg-purple-500 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+          >
+            <Filter size={16} /> Filters
+            {activeFilterCount > 0 && (
+              <span className="bg-white/20 text-white text-xs px-1.5 py-0.5 rounded-full">{activeFilterCount}</span>
+            )}
+          </button>
+          {/* Mobile filter button */}
+          <button
+            onClick={() => setShowMobileFilters(true)}
+            className={`lg:hidden flex items-center gap-2 px-4 py-2 rounded-lg transition text-sm font-medium ${activeFilterCount > 0 ? 'bg-purple-500 text-white' : 'bg-gray-800 text-gray-300'}`}
           >
             <Filter size={16} /> Filters
             {activeFilterCount > 0 && (
@@ -357,6 +369,152 @@ const Screeners = () => {
           </button>
         </div>
       </div>
+
+      {/* Mobile Filter Modal */}
+      <AnimatePresence>
+        {showMobileFilters && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="lg:hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
+            onClick={() => setShowMobileFilters(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="absolute bottom-0 left-0 right-0 bg-gray-900 rounded-t-2xl max-h-[85vh] overflow-hidden"
+            >
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-gray-900 border-b border-gray-700 px-4 py-4 flex items-center justify-between z-10">
+                <div className="flex items-center gap-3">
+                  <Filter className="text-purple-400" size={20} />
+                  <h3 className="text-lg font-bold text-white">Filters</h3>
+                  {activeFilterCount > 0 && (
+                    <span className="bg-purple-500 text-white text-xs px-2 py-0.5 rounded-full">{activeFilterCount} active</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {activeFilterCount > 0 && (
+                    <button onClick={clearFilters} className="text-gray-400 hover:text-white text-sm px-3 py-1.5 rounded-lg bg-gray-800">
+                      Clear
+                    </button>
+                  )}
+                  <button onClick={() => setShowMobileFilters(false)} className="p-2 text-gray-400 hover:text-white">
+                    <X size={24} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Search in modal */}
+              <div className="px-4 py-3 border-b border-gray-800">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Search stocks..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-8 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                  />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Active filter tags */}
+              {activeFilterCount > 0 && (
+                <div className="px-4 py-3 border-b border-gray-800">
+                  <div className="flex flex-wrap gap-2">
+                    {activeFilters.map(filterId => {
+                      let label = filterId;
+                      for (const cat of FILTER_CATEGORIES) {
+                        const found = cat.filters.find(f => f.id === filterId);
+                        if (found) { label = found.label; break; }
+                      }
+                      return (
+                        <button key={filterId} onClick={() => toggleFilter(filterId)}
+                          className="flex items-center gap-1 px-2.5 py-1.5 bg-purple-500/30 text-purple-300 rounded-lg text-xs hover:bg-purple-500/50 transition">
+                          {label} <X size={12} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Filter categories - scrollable */}
+              <div className="overflow-y-auto max-h-[calc(85vh-180px)] pb-6">
+                {FILTER_CATEGORIES.map((category) => {
+                  const isExpanded = expandedCategories.includes(category.id);
+                  const activeCatCount = activeFilters.filter(f => category.filters.some(cf => cf.id === f)).length;
+
+                  return (
+                    <div key={category.id} className="border-b border-gray-800 last:border-b-0">
+                      <button
+                        onClick={() => toggleCategory(category.id)}
+                        className="w-full flex items-center justify-between px-4 py-4 hover:bg-gray-800/50 transition"
+                      >
+                        <div className="flex items-center gap-3">
+                          <category.icon size={20} className={category.color} />
+                          <span className="text-white font-medium">{category.label}</span>
+                          {activeCatCount > 0 && (
+                            <span className="bg-purple-500 text-white text-xs px-2 py-0.5 rounded-full">{activeCatCount}</span>
+                          )}
+                        </div>
+                        <ChevronRight size={20} className={`text-gray-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                      </button>
+
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0 }}
+                            animate={{ height: 'auto' }}
+                            exit={{ height: 0 }}
+                            className="overflow-hidden bg-gray-800/30"
+                          >
+                            <div className="px-4 py-2 grid grid-cols-2 gap-2">
+                              {category.filters.map((filter) => (
+                                <button
+                                  key={filter.id}
+                                  onClick={() => toggleFilter(filter.id)}
+                                  className={`text-left px-3 py-2.5 rounded-lg text-sm transition ${
+                                    activeFilters.includes(filter.id)
+                                      ? 'bg-purple-500 text-white'
+                                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                  }`}
+                                >
+                                  {filter.label}
+                                </button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Apply button */}
+              <div className="sticky bottom-0 bg-gray-900 border-t border-gray-700 px-4 py-4 safe-area-bottom">
+                <button
+                  onClick={() => setShowMobileFilters(false)}
+                  className="w-full py-3 bg-purple-500 text-white font-semibold rounded-lg hover:bg-purple-600 transition"
+                >
+                  View {filteredStocks.length} Results
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="flex gap-6">
         {/* Filter Sidebar */}
