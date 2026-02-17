@@ -6,7 +6,7 @@ import {
   ArrowUpRight, ArrowDownRight, Flame, BarChart3
 } from 'lucide-react';
 
-const API_KEY = process.env.REACT_APP_ALPHA_VANTAGE_API_KEY || 'demo';
+const FINNHUB_KEY = process.env.REACT_APP_FINNHUB_API_KEY || '';
 
 // Major indices data (simulated for demo, would use real API)
 const INDICES = [
@@ -48,7 +48,7 @@ const Markets = () => {
     return data;
   };
 
-  // Fetch market data
+  // Fetch market data using Finnhub API
   const fetchMarketData = async () => {
     setIsLoading(true);
 
@@ -57,28 +57,18 @@ const Markets = () => {
     for (const index of INDICES) {
       try {
         const response = await fetch(
-          `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${index.symbol}&apikey=${API_KEY}`
+          `https://finnhub.io/api/v1/quote?symbol=${index.symbol}&token=${FINNHUB_KEY}`
         );
         const data = await response.json();
-        if (data['Global Quote']) {
-          const quote = data['Global Quote'];
+        if (data && data.c && data.c > 0) {
           indexPrices[index.symbol] = {
-            price: parseFloat(quote['05. price']) || 0,
-            change: parseFloat(quote['09. change']) || 0,
-            changePercent: parseFloat(quote['10. change percent']?.replace('%', '')) || 0,
-            sparkline: generateSparkline(parseFloat(quote['09. change']) >= 0 ? 'up' : 'down'),
-          };
-        } else {
-          // Mock data if API limit reached
-          const mockChange = (Math.random() - 0.5) * 4;
-          indexPrices[index.symbol] = {
-            price: 400 + Math.random() * 100,
-            change: mockChange,
-            changePercent: mockChange,
-            sparkline: generateSparkline(mockChange >= 0 ? 'up' : 'down'),
+            price: data.c,              // current price
+            change: data.d || 0,         // change
+            changePercent: data.dp || 0, // change percent
+            sparkline: generateSparkline(data.d >= 0 ? 'up' : 'down'),
           };
         }
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 150));
       } catch (error) {
         console.error(`Error fetching ${index.symbol}:`, error);
       }
@@ -90,32 +80,20 @@ const Markets = () => {
     for (const stock of POPULAR_STOCKS) {
       try {
         const response = await fetch(
-          `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${stock.symbol}&apikey=${API_KEY}`
+          `https://finnhub.io/api/v1/quote?symbol=${stock.symbol}&token=${FINNHUB_KEY}`
         );
         const data = await response.json();
-        if (data['Global Quote']) {
-          const quote = data['Global Quote'];
+        if (data && data.c && data.c > 0) {
           stockPrices[stock.symbol] = {
-            price: parseFloat(quote['05. price']) || 0,
-            change: parseFloat(quote['09. change']) || 0,
-            changePercent: parseFloat(quote['10. change percent']?.replace('%', '')) || 0,
-            volume: parseInt(quote['06. volume']) || 0,
-            high: parseFloat(quote['03. high']) || 0,
-            low: parseFloat(quote['04. low']) || 0,
-          };
-        } else {
-          // Mock data
-          const mockChange = (Math.random() - 0.5) * 6;
-          stockPrices[stock.symbol] = {
-            price: 100 + Math.random() * 200,
-            change: mockChange,
-            changePercent: mockChange,
-            volume: Math.floor(Math.random() * 50000000),
-            high: 0,
-            low: 0,
+            price: data.c,              // current price
+            change: data.d || 0,         // change
+            changePercent: data.dp || 0, // change percent
+            high: data.h || 0,           // high
+            low: data.l || 0,            // low
+            volume: 0,                   // Finnhub quote doesn't include volume
           };
         }
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 150));
       } catch (error) {
         console.error(`Error fetching ${stock.symbol}:`, error);
       }
