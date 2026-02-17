@@ -15,7 +15,7 @@ import {
   deleteTrade as deleteTradeFromFirestore
 } from '../services/firestore';
 
-const API_KEY = process.env.REACT_APP_ALPHA_VANTAGE_API_KEY || 'demo';
+const FINNHUB_KEY = process.env.REACT_APP_FINNHUB_API_KEY || '';
 
 // Demo trades to showcase the dashboard features
 const DEMO_TRADES = [
@@ -71,19 +71,17 @@ const Dashboard = () => {
     for (const ticker of openTickers) {
       try {
         const response = await fetch(
-          `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${ticker}&apikey=${API_KEY}`
+          `https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${FINNHUB_KEY}`
         );
         const data = await response.json();
 
-        if (data['Global Quote'] && data['Global Quote']['05. price']) {
-          prices[ticker] = parseFloat(data['Global Quote']['05. price']);
-        } else {
-          prices[ticker] = Math.random() * 500 + 100;
+        if (data && data.c && data.c > 0) {
+          prices[ticker] = data.c; // c = current price
         }
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Finnhub allows 60 calls/min, small delay to be safe
+        await new Promise(resolve => setTimeout(resolve, 200));
       } catch (error) {
         console.error(`Error fetching price for ${ticker}:`, error);
-        prices[ticker] = Math.random() * 500 + 100;
       }
     }
     setStockPrices(prices);
@@ -136,20 +134,14 @@ const Dashboard = () => {
     setIsFetchingPrice(true);
     try {
       const response = await fetch(
-        `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${ticker}&apikey=${API_KEY}`
+        `https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${FINNHUB_KEY}`
       );
       const data = await response.json();
-      if (data['Global Quote'] && data['Global Quote']['05. price']) {
-        const price = parseFloat(data['Global Quote']['05. price']);
-        setNewTrade(prev => ({ ...prev, entryPrice: price.toFixed(2) }));
-      } else {
-        const simulatedPrice = (Math.random() * 500 + 50).toFixed(2);
-        setNewTrade(prev => ({ ...prev, entryPrice: simulatedPrice }));
+      if (data && data.c && data.c > 0) {
+        setNewTrade(prev => ({ ...prev, entryPrice: data.c.toFixed(2) }));
       }
     } catch (error) {
       console.error('Error fetching price:', error);
-      const simulatedPrice = (Math.random() * 500 + 50).toFixed(2);
-      setNewTrade(prev => ({ ...prev, entryPrice: simulatedPrice }));
     } finally {
       setIsFetchingPrice(false);
     }
