@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import {
   TrendingUp, TrendingDown, Activity, RefreshCw,
   ArrowUpRight, ArrowDownRight, Flame, BarChart3
 } from 'lucide-react';
+import ChartModal from '../components/ChartModal';
 
 const FINNHUB_KEY = process.env.REACT_APP_FINNHUB_API_KEY || '';
 
@@ -35,6 +36,8 @@ const Markets = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [gainers, setGainers] = useState([]);
   const [losers, setLosers] = useState([]);
+  const [chartSymbol, setChartSymbol] = useState(null);
+  const [chartStockName, setChartStockName] = useState('');
 
   // Generate mock sparkline data
   const generateSparkline = (trend = 'up') => {
@@ -158,7 +161,8 @@ const Markets = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-5 hover:border-gray-600 transition"
+                className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-5 hover:border-gray-600 transition cursor-pointer"
+                onClick={() => { setChartSymbol(index.symbol); setChartStockName(index.fullName); }}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div>
@@ -244,7 +248,8 @@ const Markets = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.05 }}
-                  className="grid grid-cols-5 gap-4 p-4 hover:bg-gray-700/20 transition items-center"
+                  className="grid grid-cols-5 gap-4 p-4 hover:bg-gray-700/20 transition items-center cursor-pointer"
+                  onClick={() => { setChartSymbol(stock.symbol); setChartStockName(stock.name); }}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500/20 to-blue-600/20 border border-gray-600 flex items-center justify-center">
@@ -292,7 +297,8 @@ const Markets = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.1 }}
-                className="flex items-center justify-between p-4 hover:bg-gray-700/20 transition"
+                className="flex items-center justify-between p-4 hover:bg-gray-700/20 transition cursor-pointer"
+                onClick={() => { setChartSymbol(stock.symbol); setChartStockName(stock.name); }}
               >
                 <div className="flex items-center gap-3">
                   <div className="text-lg font-bold text-gray-500 w-6">#{i + 1}</div>
@@ -329,7 +335,8 @@ const Markets = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.1 }}
-                className="flex items-center justify-between p-4 hover:bg-gray-700/20 transition"
+                className="flex items-center justify-between p-4 hover:bg-gray-700/20 transition cursor-pointer"
+                onClick={() => { setChartSymbol(stock.symbol); setChartStockName(stock.name); }}
               >
                 <div className="flex items-center gap-3">
                   <div className="text-lg font-bold text-gray-500 w-6">#{i + 1}</div>
@@ -370,7 +377,8 @@ const Markets = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  className="flex items-center justify-between p-4 hover:bg-gray-700/20 transition"
+                  className="flex items-center justify-between p-4 hover:bg-gray-700/20 transition cursor-pointer"
+                  onClick={() => { setChartSymbol(stock.symbol); setChartStockName(stock.name); }}
                 >
                   <div className="flex items-center gap-3">
                     <div className="text-lg font-bold text-orange-400 w-6">
@@ -396,6 +404,16 @@ const Markets = () => {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {chartSymbol && (
+          <ChartModal
+            symbol={chartSymbol}
+            stockName={chartStockName}
+            onClose={() => { setChartSymbol(null); setChartStockName(''); }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

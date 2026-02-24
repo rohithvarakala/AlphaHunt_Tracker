@@ -5,6 +5,7 @@ import {
   RefreshCw, Bell, BellOff, Trash2, ArrowUpRight
 } from 'lucide-react';
 import StockSearch from '../components/StockSearch';
+import ChartModal from '../components/ChartModal';
 
 const API_KEY = process.env.REACT_APP_ALPHA_VANTAGE_API_KEY || 'demo';
 
@@ -13,6 +14,8 @@ const Watchlist = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [priceData, setPriceData] = useState({});
+  const [chartSymbol, setChartSymbol] = useState(null);
+  const [chartStockName, setChartStockName] = useState('');
 
   // Load watchlist from localStorage
   useEffect(() => {
@@ -135,7 +138,10 @@ const Watchlist = () => {
                         <span className="text-white font-bold">{item.symbol.slice(0, 2)}</span>
                       </div>
                       <div>
-                        <h3 className="text-white font-bold text-lg">{item.symbol}</h3>
+                        <h3
+                          className="text-white font-bold text-lg cursor-pointer hover:text-emerald-400 transition"
+                          onClick={() => { setChartSymbol(item.symbol); setChartStockName(item.name); }}
+                        >{item.symbol}</h3>
                         <p className="text-gray-500 text-sm truncate max-w-[150px]">{item.name}</p>
                       </div>
                     </div>
@@ -168,7 +174,10 @@ const Watchlist = () => {
                         </span>
                       </div>
                     </div>
-                    <button className="p-2 text-gray-500 hover:text-emerald-400 hover:bg-emerald-400/10 rounded-lg transition">
+                    <button
+                      className="p-2 text-gray-500 hover:text-emerald-400 hover:bg-emerald-400/10 rounded-lg transition"
+                      onClick={() => { setChartSymbol(item.symbol); setChartStockName(item.name); }}
+                    >
                       <ArrowUpRight size={20} />
                     </button>
                   </div>
@@ -251,6 +260,16 @@ const Watchlist = () => {
               </p>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {chartSymbol && (
+          <ChartModal
+            symbol={chartSymbol}
+            stockName={chartStockName}
+            onClose={() => { setChartSymbol(null); setChartStockName(''); }}
+          />
         )}
       </AnimatePresence>
     </div>

@@ -6,6 +6,7 @@ import {
   CheckCircle, AlertCircle, Zap, Target, DollarSign, Filter, Cloud, HardDrive
 } from 'lucide-react';
 import StockSearch from '../components/StockSearch';
+import ChartModal from '../components/ChartModal';
 import { useAuth } from '../contexts/AuthContext';
 import {
   subscribeToWatchlist,
@@ -51,6 +52,7 @@ const TradeActivity = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [filterAction, setFilterAction] = useState('all');
   const [isCloudSynced, setIsCloudSynced] = useState(false);
+  const [chartSymbol, setChartSymbol] = useState(null);
 
   // Load watchlist from Firestore (logged in) or localStorage (guest)
   useEffect(() => {
@@ -301,7 +303,10 @@ const TradeActivity = () => {
                       </div>
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-white font-bold text-lg">{trade.symbol}</span>
+                          <span
+                            className="text-white font-bold text-lg cursor-pointer hover:text-emerald-400 transition"
+                            onClick={() => setChartSymbol(trade.symbol)}
+                          >{trade.symbol}</span>
                           <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
                             trade.action === 'BUY'
                               ? 'bg-emerald-500/20 text-emerald-400'
@@ -392,7 +397,10 @@ const TradeActivity = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-white font-bold">{signal.symbol}</span>
+                        <span
+                          className="text-white font-bold cursor-pointer hover:text-emerald-400 transition"
+                          onClick={() => setChartSymbol(signal.symbol)}
+                        >{signal.symbol}</span>
                         <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase ${
                           signal.type === 'entry'
                             ? 'bg-emerald-500/20 text-emerald-400'
@@ -470,7 +478,10 @@ const TradeActivity = () => {
                           <span className="text-white font-bold">{item.symbol.slice(0, 2)}</span>
                         </div>
                         <div>
-                          <h3 className="text-white font-bold text-lg">{item.symbol}</h3>
+                          <h3
+                            className="text-white font-bold text-lg cursor-pointer hover:text-emerald-400 transition"
+                            onClick={() => setChartSymbol(item.symbol)}
+                          >{item.symbol}</h3>
                           <p className="text-gray-500 text-sm truncate max-w-[120px]">{item.name}</p>
                         </div>
                       </div>
@@ -557,6 +568,15 @@ const TradeActivity = () => {
               </p>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {chartSymbol && (
+          <ChartModal
+            symbol={chartSymbol}
+            onClose={() => setChartSymbol(null)}
+          />
         )}
       </AnimatePresence>
     </div>

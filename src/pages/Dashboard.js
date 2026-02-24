@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import StockSearch from '../components/StockSearch';
 import PerformanceAnalytics from '../components/PerformanceAnalytics';
+import ChartModal from '../components/ChartModal';
 import { getStockBySymbol, SECTORS } from '../data/stockDatabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -53,6 +54,7 @@ const Dashboard = () => {
   const [isFetchingPrice, setIsFetchingPrice] = useState(false);
   const [selectedTimeframe, setSelectedTimeframe] = useState('1M');
   const [showingDemo, setShowingDemo] = useState(false);
+  const [chartSymbol, setChartSymbol] = useState(null);
 
   // Use demo trades when no real trades exist
   const displayTrades = trades.length > 0 ? trades : DEMO_TRADES;
@@ -494,7 +496,10 @@ const Dashboard = () => {
                           <span className="text-white font-bold text-sm sm:text-lg">{trade.ticker.charAt(0)}</span>
                         </div>
                         <div>
-                          <div className="text-white font-bold text-base sm:text-lg">{trade.ticker}</div>
+                          <div
+                            className="text-white font-bold text-base sm:text-lg cursor-pointer hover:text-emerald-400 transition"
+                            onClick={() => setChartSymbol(trade.ticker)}
+                          >{trade.ticker}</div>
                           <div className="text-gray-400 text-xs sm:text-sm">
                             {trade.shares} shares {trade.sector ? `• ${trade.sector}` : ''}
                           </div>
@@ -743,6 +748,15 @@ const Dashboard = () => {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {chartSymbol && (
+          <ChartModal
+            symbol={chartSymbol}
+            onClose={() => setChartSymbol(null)}
+          />
         )}
       </AnimatePresence>
     </div>
