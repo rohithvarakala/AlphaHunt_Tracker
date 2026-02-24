@@ -7,6 +7,7 @@ import {
   ArrowUpDown, ArrowUp, ArrowDown, ChevronRight
 } from 'lucide-react';
 import { STOCKS, SECTORS } from '../data/stockDatabase';
+import ChartModal from '../components/ChartModal';
 
 // Seed-based random for consistent simulated data per stock
 const seededRandom = (seed) => {
@@ -235,6 +236,8 @@ const Screeners = () => {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 50;
+  const [chartSymbol, setChartSymbol] = useState(null);
+  const [chartStockName, setChartStockName] = useState('');
 
   // Filter logic: OR within same category, AND across categories
   const filteredStocks = useMemo(() => {
@@ -648,7 +651,8 @@ const Screeners = () => {
                     <motion.tr key={stock.symbol}
                       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                       transition={{ delay: Math.min(i * 0.015, 0.4) }}
-                      className="hover:bg-gray-700/20 transition">
+                      className="hover:bg-gray-700/20 transition cursor-pointer"
+                      onClick={() => { setChartSymbol(stock.symbol); setChartStockName(stock.name); }}>
 
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
@@ -748,6 +752,16 @@ const Screeners = () => {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {chartSymbol && (
+          <ChartModal
+            symbol={chartSymbol}
+            stockName={chartStockName}
+            onClose={() => { setChartSymbol(null); setChartStockName(''); }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
