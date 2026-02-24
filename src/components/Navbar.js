@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LogOut, User, ChevronDown,
+  LogOut, User, ChevronDown, Settings, Shield, Crown, Star,
   LayoutDashboard, Activity, TrendingUp, Filter
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Navbar = () => {
-  const { user, signInWithGoogle, logout } = useAuth();
+  const { user, userProfile, logout, isAdmin } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Reordered: Dashboard, Screeners, Markets, Trade Activity (no Analytics)
   const navItems = [
@@ -21,6 +22,25 @@ const Navbar = () => {
   ];
 
   const isActive = (path) => location.pathname === path;
+
+  const handleLogout = async () => {
+    setShowUserMenu(false);
+    await logout();
+    navigate('/');
+  };
+
+  const getTierIcon = (tier) => {
+    switch (tier) {
+      case 'admin':
+        return <Shield className="w-3 h-3 text-purple-400" />;
+      case 'premium':
+        return <Crown className="w-3 h-3 text-yellow-400" />;
+      default:
+        return null;
+    }
+  };
+
+  const tier = userProfile?.tier || 'free';
 
   return (
     <>
@@ -64,59 +84,121 @@ const Navbar = () => {
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-800/50 transition"
                   >
-                    {user.photoURL ? (
-                      <img
-                        src={user.photoURL}
-                        alt={user.displayName}
-                        className="w-8 h-8 rounded-full border-2 border-emerald-500/50"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center">
-                        <User size={16} className="text-white" />
-                      </div>
-                    )}
+                    <div className="relative">
+                      {user.photoURL ? (
+                        <img
+                          src={user.photoURL}
+                          alt={user.displayName}
+                          className="w-8 h-8 rounded-full border-2 border-emerald-500/50"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center">
+                          <span className="text-white text-sm font-bold">
+                            {(userProfile?.displayName || user.email)?.[0]?.toUpperCase() || 'U'}
+                          </span>
+                        </div>
+                      )}
+                      {/* Tier badge */}
+                      {tier !== 'free' && (
+                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-gray-900 rounded-full flex items-center justify-center">
+                          {getTierIcon(tier)}
+                        </div>
+                      )}
+                    </div>
                     <ChevronDown size={14} className="text-gray-400 hidden sm:block" />
                   </button>
 
                   <AnimatePresence>
                     {showUserMenu && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute right-0 mt-2 w-56 bg-gray-900 border border-gray-700 rounded-xl shadow-xl overflow-hidden"
-                      >
-                        <div className="p-4 border-b border-gray-700">
-                          <p className="text-white font-medium truncate">{user.displayName}</p>
-                          <p className="text-gray-500 text-sm truncate">{user.email}</p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            logout();
-                            setShowUserMenu(false);
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-gray-800 transition"
+                      <>
+                        {/* Backdrop */}
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setShowUserMenu(false)}
+                        />
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute right-0 mt-2 w-56 bg-gray-900 border border-gray-700 rounded-xl shadow-xl overflow-hidden z-50"
                         >
-                          <LogOut size={16} />
-                          Sign out
-                        </button>
-                      </motion.div>
+                          {/* User Info */}
+                          <div className="p-4 border-b border-gray-700">
+                            <div className="flex items-center gap-2">
+                              <p className="text-white font-medium truncate flex-1">
+                                {userProfile?.displayName || user.displayName || 'User'}
+                              </p>
+                              {tier !== 'free' && (
+                                <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                                  tier === 'admin'
+                                    ? 'bg-purple-500/20 text-purple-400'
+                                    : 'bg-yellow-500/20 text-yellow-400'
+                                }`}>
+                                  {getTierIcon(tier)}
+                                  {tier === 'admin' ? 'Admin' : 'Pro'}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-gray-500 text-sm truncate">{user.email}</p>
+                          </div>
+
+                          {/* Menu Items */}
+                          <div className="py-1">
+                            <Link
+                              to="/account"
+                              onClick={() => setShowUserMenu(false)}
+                              className="flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:bg-gray-800 transition"
+                            >
+                              <Settings size={16} />
+                              Account Settings
+                            </Link>
+
+                            {isAdmin() && (
+                              <Link
+                                to="/admin"
+                                onClick={() => setShowUserMenu(false)}
+                                className="flex items-center gap-3 px-4 py-2.5 text-purple-400 hover:bg-gray-800 transition"
+                              >
+                                <Shield size={16} />
+                                Admin Panel
+                              </Link>
+                            )}
+
+                            {tier === 'free' && (
+                              <Link
+                                to="/upgrade"
+                                onClick={() => setShowUserMenu(false)}
+                                className="flex items-center gap-3 px-4 py-2.5 text-emerald-400 hover:bg-gray-800 transition"
+                              >
+                                <Crown size={16} />
+                                Upgrade to Pro
+                              </Link>
+                            )}
+                          </div>
+
+                          {/* Logout */}
+                          <div className="border-t border-gray-700 py-1">
+                            <button
+                              onClick={handleLogout}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-red-400 hover:bg-gray-800 transition"
+                            >
+                              <LogOut size={16} />
+                              Sign out
+                            </button>
+                          </div>
+                        </motion.div>
+                      </>
                     )}
                   </AnimatePresence>
                 </div>
               ) : (
-                <button
-                  onClick={signInWithGoogle}
-                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white text-gray-900 rounded-lg text-sm font-medium hover:bg-gray-100 transition"
+                <Link
+                  to="/auth"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-emerald-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-emerald-600 hover:to-blue-700 transition"
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
+                  <User size={16} />
                   <span className="hidden sm:inline">Sign in</span>
-                </button>
+                </Link>
               )}
             </div>
           </div>
